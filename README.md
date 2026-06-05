@@ -21,31 +21,6 @@ The Driving School Management System is a web-based application developed to str
 * CSS
 * JavaScript
 
-## Project Structure
-
-```
-Driving-School-Management-System
-│
-├── source-code/
-├── database/
-├── screenshots/
-├── docs/
-└── README.md
-```
-
-## Installation
-
-1. Clone the repository:
-
-   ```
-   git clone https://github.com/rupesh7782/Driving-School-Management-System.git
-   ```
-
-2. Navigate to the project directory.
-
-3. Configure the MySQL database.
-
-4. Run the application.
 
 ## Screenshots
 
