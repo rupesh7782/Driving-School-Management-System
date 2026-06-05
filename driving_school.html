@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBM — Driving School Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c28;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --accent: #4f8ef7;
+  --accent2: #7c5fe6;
+  --green: #2dd4a0;
+  --amber: #f5a623;
+  --red: #f25c5c;
+  --text: #f0f0f8;
+  --muted: #7a7a9a;
+  --card-bg: #16161f;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+/* Animated background dots */
+body::before {
+  content:''; position:fixed; inset:0; z-index:0;
+  background-image: radial-gradient(circle, rgba(79,142,247,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events:none;
+}
+
+/* NAV */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(10,10,15,0.85);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;
+  display:flex; align-items:center; gap:2rem; height:60px;
+  animation: slideDown 0.5s ease;
+}
+@keyframes slideDown { from{transform:translateY(-60px);opacity:0} to{transform:translateY(0);opacity:1} }
+.nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:20px; letter-spacing:-0.5px; color:var(--text); }
+.nav-logo span { color:var(--accent); }
+.nav-tabs { display:flex; gap:4px; flex:1; }
+.nav-tab {
+  padding:6px 14px; border-radius:8px; border:none;
+  background:transparent; color:var(--muted); font-size:13px;
+  font-family:'DM Sans',sans-serif; cursor:pointer;
+  transition:all 0.2s; display:flex; align-items:center; gap:6px;
+}
+.nav-tab:hover { background:var(--surface2); color:var(--text); }
+.nav-tab.active { background:var(--surface2); color:var(--accent); }
+.nav-tab svg { width:15px; height:15px; }
+.nav-badge {
+  background:var(--accent); color:#fff; font-size:10px;
+  padding:1px 6px; border-radius:10px; font-weight:500;
+}
+
+/* PAGES */
+.page { display:none; padding:2rem; max-width:1100px; margin:0 auto; position:relative; z-index:1; }
+.page.active { display:block; animation: fadeUp 0.4s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+/* HERO */
+.hero {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; padding:2.5rem; margin-bottom:1.5rem;
+  display:flex; align-items:center; justify-content:space-between; gap:2rem;
+  overflow:hidden; position:relative;
+}
+.hero::after {
+  content:''; position:absolute; right:-60px; top:-60px;
+  width:260px; height:260px; border-radius:50%;
+  background:radial-gradient(circle, rgba(79,142,247,0.12), transparent 70%);
+  pointer-events:none;
+}
+.hero-title { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; line-height:1.2; margin-bottom:8px; }
+.hero-title span { color:var(--accent); }
+.hero-sub { color:var(--muted); font-size:14px; line-height:1.6; max-width:420px; }
+/* .hero-car {
+  font-size:72px; animation:carBounce 3s ease-in-out infinite;
+  flex-shrink:0; filter:drop-shadow(0 0 20px rgba(79,142,247,0.3));
+} */
+
+
+.hero-car {
+  width: 490px;
+  height: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 20px rgba(79,142,247,0.3));
+  /* 👇 Runs once for 1.2 seconds on page load */
+  animation: driveIn 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
+}
+
+.hero-car img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@keyframes driveIn {
+  0% {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+
+
+/* STAT CARDS */
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:1.5rem; }
+.stat-card {
+  background:var(--card-bg); border:1px solid var(--border);
+  border-radius:14px; padding:1.25rem; position:relative; overflow:hidden;
+  transition:transform 0.2s, border-color 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+.stat-card:hover { transform:translateY(-3px); border-color:var(--border2); }
+.stat-card:nth-child(1) { animation-delay:0.05s }
+.stat-card:nth-child(2) { animation-delay:0.1s }
+.stat-card:nth-child(3) { animation-delay:0.15s }
+.stat-card:nth-child(4) { animation-delay:0.2s }
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  border-radius:14px 14px 0 0;
+}
+.stat-card.blue::before { background:var(--accent); }
+.stat-card.purple::before { background:var(--accent2); }
+.stat-card.green::before { background:var(--green); }
+.stat-card.amber::before { background:var(--amber); }
+.stat-icon { font-size:24px; margin-bottom:10px; }
+.stat-val { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; line-height:1; margin-bottom:4px; }
+.stat-label { font-size:12px; color:var(--muted); }
+.stat-delta { font-size:11px; color:var(--green); margin-top:6px; }
+
+/* SECTION HEADER */
+.section-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:1rem;
+}
+.section-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; }
+.btn-primary {
+  background:var(--accent); color:#fff; border:none;
+  padding:8px 16px; border-radius:8px; font-size:13px;
+  font-family:'DM Sans',sans-serif; cursor:pointer; font-weight:500;
+  display:flex; align-items:center; gap:6px;
+  transition:all 0.2s;
+}
+.btn-primary:hover { background:#3a7ae8; transform:translateY(-1px); }
+.btn-sm {
+  padding:5px 10px; border-radius:6px; border:1px solid var(--border2);
+  background:transparent; color:var(--muted); font-size:12px;
+  cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.15s;
+}
+.btn-sm:hover { background:var(--surface2); color:var(--text); }
+.btn-danger { border-color:rgba(242,92,92,0.3); color:var(--red); }
+.btn-danger:hover { background:rgba(242,92,92,0.1); }
+.btn-success { border-color:rgba(45,212,160,0.3); color:var(--green); }
+.btn-success:hover { background:rgba(45,212,160,0.1); }
+
+/* TABLE */
+.table-wrap {
+  background:var(--card-bg); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden;
+}
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead { background:var(--surface2); }
+th { padding:11px 16px; text-align:left; color:var(--muted); font-weight:500; font-size:12px; letter-spacing:0.3px; }
+td { padding:12px 16px; border-top:1px solid var(--border); }
+tr { transition:background 0.15s; }
+tr:hover td { background:var(--surface2); }
+.avatar {
+  width:32px; height:32px; border-radius:50%; display:inline-flex;
+  align-items:center; justify-content:center; font-size:12px; font-weight:700;
+  margin-right:10px; flex-shrink:0;
+}
+.cell-name { display:flex; align-items:center; }
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 9px; border-radius:20px; font-size:11px; font-weight:500;
+}
+.badge-scheduled { background:rgba(79,142,247,0.15); color:#7ab3f9; }
+.badge-completed { background:rgba(45,212,160,0.15); color:#2dd4a0; }
+.badge-cancelled { background:rgba(242,92,92,0.15); color:#f25c5c; }
+.badge-morning { background:rgba(245,166,35,0.15); color:#f5a623; }
+.badge-evening { background:rgba(124,95,230,0.15); color:#a68bfa; }
+
+/* FORM PANEL */
+.form-panel {
+  background:var(--card-bg); border:1px solid var(--border);
+  border-radius:14px; padding:1.5rem; margin-bottom:1.5rem;
+}
+.form-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group label { font-size:11px; color:var(--muted); letter-spacing:0.3px; }
+.form-group input, .form-group select {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:9px 12px; color:var(--text);
+  font-size:13px; font-family:'DM Sans',sans-serif;
+  outline:none; transition:border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus { border-color:var(--accent); }
+.form-group select option { background:var(--surface2); }
+
+/* SCHEDULE GRID */
+.sched-grid {
+  background:var(--card-bg); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden;
+}
+.sched-head {
+  display:grid; grid-template-columns:90px repeat(6,1fr);
+  background:var(--surface2); border-bottom:1px solid var(--border);
+}
+.sched-head-cell {
+  padding:10px 8px; font-size:11px; font-weight:500; color:var(--muted);
+  text-align:center; letter-spacing:0.3px;
+}
+.sched-row {
+  display:grid; grid-template-columns:90px repeat(6,1fr);
+  border-bottom:1px solid var(--border);
+  transition:background 0.15s;
+}
+.sched-row:last-child { border-bottom:none; }
+.sched-row:hover { background:rgba(255,255,255,0.02); }
+.sched-time {
+  padding:10px 10px; font-size:11px; color:var(--muted);
+  display:flex; align-items:center; border-right:1px solid var(--border);
+}
+.sched-cell {
+  padding:6px 5px; border-right:1px solid var(--border);
+  cursor:pointer; min-height:52px; display:flex; flex-direction:column;
+  gap:3px; transition:background 0.15s;
+}
+.sched-cell:last-child { border-right:none; }
+.sched-cell:hover { background:rgba(79,142,247,0.04); }
+.sched-chip {
+  border-radius:6px; padding:4px 7px; font-size:10px; font-weight:500;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  animation:chipIn 0.25s ease;
+}
+@keyframes chipIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+.sched-add {
+  font-size:10px; color:var(--border2); text-align:center;
+  padding-top:4px; transition:color 0.15s;
+}
+.sched-cell:hover .sched-add { color:var(--accent); }
+
+/* MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; animation:fadeIn 0.2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:18px; padding:1.75rem; width:360px;
+  animation:modalIn 0.25s ease;
+}
+@keyframes modalIn { from{opacity:0;transform:scale(0.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.modal-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:1.25rem; }
+.modal-btns { display:flex; gap:8px; margin-top:1.25rem; }
+.modal-btns button { flex:1; padding:10px; border-radius:8px; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:500; border:none; }
+.modal-cancel { background:var(--surface2); color:var(--muted); }
+.modal-cancel:hover { color:var(--text); }
+.modal-confirm { background:var(--accent); color:#fff; transition:background 0.15s; }
+.modal-confirm:hover { background:#3a7ae8; }
+
+/* CHART BAR */
+.chart-wrap { display:flex; align-items:flex-end; gap:8px; height:80px; margin-top:12px; }
+.bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bar {
+  width:100%; border-radius:4px 4px 0 0; background:var(--accent);
+  transition:height 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  min-height:4px;
+}
+.bar-label { font-size:10px; color:var(--muted); }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:24px; right:24px; z-index:300;
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:10px; padding:12px 18px; font-size:13px;
+  display:flex; align-items:center; gap:10px;
+  transform:translateY(60px); opacity:0;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* PROGRESS */
+.progress-bar {
+  height:4px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-top:8px;
+}
+.progress-fill {
+  height:100%; border-radius:4px; background:var(--accent);
+  transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:3rem 1rem; color:var(--muted); font-size:13px; }
+.empty-icon { font-size:40px; margin-bottom:12px; opacity:0.5; }
+
+/* VEHICLE CARDS */
+.vehicle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.vehicle-card {
+  background:var(--card-bg); border:1px solid var(--border);
+  border-radius:14px; padding:1.25rem;
+  transition:all 0.2s; animation:fadeUp 0.4s ease both;
+}
+.vehicle-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+.vehicle-car-icon {
+  width: 100%;
+  height: 100px; /* Limits the height so all cards stay uniform */
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.vehicle-car-icon img {
+  max-width: 200px; /* Controls how large the cars appear */
+  max-height: 150%;
+  object-fit: contain; /* Ensures the image doesn't stretch weirdly */
+}
+
+
+.vehicle-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:4px; }
+.vehicle-detail { font-size:12px; color:var(--muted); margin-bottom:10px; }
+.vehicle-status {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:11px; font-weight:500;
+}
+.status-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+
+/* PULSE ANIMATION */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.pulse { animation:pulse 2s ease infinite; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">R<span>B</span>M</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')" id="tab-dashboard">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-tab" onclick="showPage('students')" id="tab-students">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-width="2"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2"/></svg>
+      Students <span class="nav-badge" id="student-badge">0</span>
+    </button>
+    <button class="nav-tab" onclick="showPage('schedule')" id="tab-schedule">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/></svg>
+      Schedule
+    </button>
+    <button class="nav-tab" onclick="showPage('vehicles')" id="tab-vehicles">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h13l4 4v4a2 2 0 0 1-2 2h-2" stroke-width="2"/><circle cx="7.5" cy="17.5" r="2.5" stroke-width="2"/><circle cx="17.5" cy="17.5" r="2.5" stroke-width="2"/></svg>
+      Vehicles
+    </button>
+  </div>
+  <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+    <span class="status-dot pulse" style="background:var(--green);"></span> System Online
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="hero">
+    <div>
+      <div class="hero-title">Welcome back,<br><span>Admin</span> 👋</div>
+      <div class="hero-sub">Manage your driving school students, schedule sessions, and track vehicle assignments — all in one place.</div>
+    </div>
+    <!-- <div class="hero-car">🚗</div> -->
+    <div class="hero-car">
+      <img src="Range Rover.png" alt="Driving School Car" />
+</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-icon">👥</div>
+      <div class="stat-val" id="dash-students">0</div>
+      <div class="stat-label">Total Students</div>
+      <div class="stat-delta">↑ Active this week</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val" id="dash-sessions">0</div>
+      <div class="stat-label">Total Sessions</div>
+      <div class="stat-delta">↑ Booked slots</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon">✅</div>
+      <div class="stat-val" id="dash-completed">0</div>
+      <div class="stat-label">Completed</div>
+      <div class="stat-delta" id="dash-rate">0% completion rate</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon">🚙</div>
+      <div class="stat-val">3</div>
+      <div class="stat-label">Vehicles Available</div>
+      <div class="stat-delta">All operational</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div class="form-panel">
+      <div class="section-header" style="margin-bottom:0.75rem;">
+        <div class="section-title">Sessions this week</div>
+      </div>
+      <div class="chart-wrap" id="weekChart"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;">
+        <span style="font-size:10px;color:var(--muted);">Mon</span>
+        <span style="font-size:10px;color:var(--muted);">Tue</span>
+        <span style="font-size:10px;color:var(--muted);">Wed</span>
+        <span style="font-size:10px;color:var(--muted);">Thu</span>
+        <span style="font-size:10px;color:var(--muted);">Fri</span>
+        <span style="font-size:10px;color:var(--muted);">Sat</span>
+      </div>
+    </div>
+    <div class="form-panel">
+      <div class="section-title" style="margin-bottom:1rem;">Recent Activity</div>
+      <div id="recentActivity" style="display:flex;flex-direction:column;gap:10px;font-size:13px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENTS -->
+<div class="page" id="page-students">
+  <div class="form-panel">
+    <div class="section-title" style="margin-bottom:1rem;">Add New Student</div>
+    <div class="form-grid">
+      <div class="form-group"><label>FULL NAME</label><input type="text" id="sName" placeholder="e.g. Rahul Sharma" /></div>
+      <div class="form-group"><label>PHONE NUMBER</label><input type="text" id="sPhone" placeholder="+91 98765 43210" /></div>
+      <div class="form-group"><label>VEHICLE PREFERENCE</label>
+        <select id="sVehicle">
+          <option>Maruti Swift</option>
+          <option>Honda City</option>
+          <option>Wagon R</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>INSTRUCTOR</label>
+        <select id="sInstructor">
+          <option>Rupesh Chavan</option>
+          <option>Manish Patil</option>
+          <option>Bhavesh Nikam</option>
+          <option>Rahul Relan</option>
+          <option>Deepak Singh</option>
+          <option>Suresh Kumar</option>
+
+        </select>
+      </div>
+      <div class="form-group"><label>START DATE</label><input type="date" id="sDate" /></div>
+      <div class="form-group"><label>FEE PAID</label>
+        <select id="sFee">
+          <option>Paid</option>
+          <option>Pending</option>
+          <option>Partial</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addStudent()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-width="2"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="2"/></svg>
+      Add Student
+    </button>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">All Students</div>
+    <div style="font-size:12px;color:var(--muted);" id="studentCount">0 students</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th><th>Phone</th><th>Vehicle</th><th>Instructor</th><th>Sessions</th><th>Fee</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="studentTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="page" id="page-schedule">
+  <div class="form-panel" style="margin-bottom:1.5rem;">
+    <div class="section-title" style="margin-bottom:1rem;">Book a Driving Slot</div>
+    <div class="form-grid">
+      <div class="form-group"><label>STUDENT</label>
+        <select id="schStudent"><option value="">Select student...</option></select>
+      </div>
+      <div class="form-group"><label>DATE</label><input type="date" id="schDate" /></div>
+      <div class="form-group"><label>TIME SLOT</label>
+        <select id="schSlot">
+          <option>6:00 – 7:00 AM</option>
+          <option>7:00 – 8:00 AM</option>
+          <option>8:00 – 9:00 AM</option>
+          <option>9:00 – 10:00 AM</option>
+          <option>4:00 – 5:00 PM</option>
+          <option>5:00 – 6:00 PM</option>
+          <option>6:00 – 7:00 PM</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addSchedule()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-width="2"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="2"/></svg>
+      Book Slot
+    </button>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">Weekly Schedule</div>
+    <div style="font-size:12px;color:var(--muted);">Click any cell to manage</div>
+  </div>
+  <div class="sched-grid" id="schedGrid"></div>
+
+  <div style="margin-top:1.5rem;">
+    <div class="section-title" style="margin-bottom:1rem;">All Sessions</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Date</th><th>Time Slot</th><th>Vehicle</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="sessionsTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- VEHICLES -->
+<div class="page" id="page-vehicles">
+  <div class="section-header" style="margin-bottom:1rem;">
+    <div class="section-title">Fleet Overview</div>
+    <div style="font-size:12px;color:var(--muted);">3 vehicles registered</div>
+  </div>
+  <div class="vehicle-grid" id="vehicleGrid"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Manage Slot</div>
+    <div id="modalBody"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" id="modalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-dot" id="toastDot"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+const SLOTS = ['6:00–7:00 AM','7:00–8:00 AM','8:00–9:00 AM','9:00–10:00 AM','4:00–5:00 PM','5:00–6:00 PM','6:00–7:00 PM'];
+const COLORS = [
+  ['#4f8ef7','#1a3a6e'],['#7c5fe6','#2e1e6e'],['#2dd4a0','#0d4a38'],
+  ['#f5a623','#5a3c0a'],['#f25c5c','#5a1c1c'],['#e879a0','#5a1a38'],['#38bdf8','#0c3a55']
+];
+
+
+const VEHICLES = [
+  {name:'Maruti Swift', icon:'swift.png', plate:'MH-12 AB 1234', color:'#4f8ef7', fuel:'Petrol', year:'2022'},
+  {name:'Honda City',  icon:'city.png',  plate:'MH-12 CD 5678', color:'#7c5fe6', fuel:'Petrol', year:'2021'},
+  {name:'Wagon R',     icon:'wagonr.png',plate:'MH-12 EF 9012', color:'#2dd4a0', fuel:'CNG',    year:'2023'},
+];
+
+let students = [
+  {id:1,name:'Rahul Patil',phone:'+91 98001 11111',vehicle:'Maruti Swift',instructor:'Suresh Kumar',fee:'Paid',sessions:4,color:0},
+  {id:2,name:'Priya Desai',phone:'+91 98001 22222',vehicle:'Honda City',instructor:'Manoj Patil',fee:'Paid',sessions:6,color:1},
+  {id:3,name:'Amit Joshi',phone:'+91 98001 33333',vehicle:'Wagon R',instructor:'Deepak Singh',fee:'Pending',sessions:2,color:2},
+];
+let sessions = [
+  {id:1,studentId:1,date:'2026-06-05',slot:'6:00–7:00 AM',vehicle:'Maruti Swift',status:'completed'},
+  {id:2,studentId:2,date:'2026-06-05',slot:'7:00–8:00 AM',vehicle:'Honda City',status:'scheduled'},
+  {id:3,studentId:3,date:'2026-06-06',slot:'8:00–9:00 AM',vehicle:'Wagon R',status:'scheduled'},
+  {id:4,studentId:1,date:'2026-06-07',slot:'6:00–7:00 AM',vehicle:'Maruti Swift',status:'scheduled'},
+];
+let nextSId = 4, nextSessId = 5;
+
+function getStudent(id){ return students.find(s=>s.id===id); }
+function initials(name){ return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  const d = document.getElementById('toastDot');
+  const m = document.getElementById('toastMsg');
+  d.style.background = type==='success' ? '#2dd4a0' : type==='error' ? '#f25c5c' : '#f5a623';
+  m.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('tab-'+page).classList.add('active');
+  if(page==='dashboard') renderDashboard();
+  if(page==='students') renderStudents();
+  if(page==='schedule') renderSchedule();
+  if(page==='vehicles') renderVehicles();
+}
+
+function renderDashboard(){
+  document.getElementById('dash-students').textContent = students.length;
+  document.getElementById('dash-sessions').textContent = sessions.length;
+  const comp = sessions.filter(s=>s.status==='completed').length;
+  document.getElementById('dash-completed').textContent = comp;
+  const rate = sessions.length ? Math.round(comp/sessions.length*100) : 0;
+  document.getElementById('dash-rate').textContent = rate+'% completion rate';
+  document.getElementById('student-badge').textContent = students.length;
+
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+  const counts = days.map((_,i)=> sessions.filter(s=> new Date(s.date).getDay()===(i+1)%7||i===5&&new Date(s.date).getDay()===6).length + Math.floor(Math.random()*3));
+  const max = Math.max(...counts,1);
+  document.getElementById('weekChart').innerHTML = counts.map((c,i)=>`
+    <div class="bar-col">
+      <div class="bar" style="height:${Math.round(c/max*72)}px;background:${i===new Date().getDay()-1?'var(--green)':'var(--accent)'};opacity:${0.5+0.5*(c/max)}"></div>
+    </div>`).join('');
+
+  const recent = [...sessions].reverse().slice(0,4);
+  document.getElementById('recentActivity').innerHTML = recent.map(s=>{
+    const st = getStudent(s.studentId);
+    if(!st) return '';
+    const icons = {scheduled:'📅',completed:'✅',cancelled:'❌'};
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:18px;">${icons[s.status]}</span>
+      <div>
+        <div style="font-size:12px;font-weight:500;">${st.name}</div>
+        <div style="font-size:11px;color:var(--muted);">${s.slot} · ${s.date}</div>
+      </div>
+      <span class="badge badge-${s.status}" style="margin-left:auto;">${s.status}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:13px;">No recent activity</div>';
+}
+
+function renderStudents(){
+  document.getElementById('studentCount').textContent = students.length+' students';
+  document.getElementById('student-badge').textContent = students.length;
+  const sel = document.getElementById('schStudent');
+  sel.innerHTML = '<option value="">Select student...</option>';
+  students.forEach(s=> sel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+  const tb = document.getElementById('studentTable');
+  if(!students.length){ tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">👥</div>No students yet. Add one above.</div></td></tr>`; return; }
+  tb.innerHTML = students.map(s=>{
+    const [bg,fg] = COLORS[s.color%COLORS.length];
+    const sessCount = sessions.filter(x=>x.studentId===s.id).length;
+    const feeColors = {Paid:'badge-completed',Pending:'badge-cancelled',Partial:'badge-morning'};
+    return `<tr>
+      <td><div class="cell-name">
+        <div class="avatar" style="background:${bg}20;color:${bg};">${initials(s.name)}</div>
+        <div>
+          <div style="font-weight:500;font-size:13px;">${s.name}</div>
+          <div style="font-size:11px;color:var(--muted);">ID #${String(s.id).padStart(3,'0')}</div>
+        </div>
+      </div></td>
+      <td style="color:var(--muted);font-size:12px;">${s.phone}</td>
+      <td style="font-size:12px;">🚗 ${s.vehicle}</td>
+      <td style="font-size:12px;">👨‍🏫 ${s.instructor}</td>
+      <td>
+        <span style="font-weight:500;">${sessCount}</span>
+        <div class="progress-bar" style="width:60px;display:inline-block;vertical-align:middle;margin-left:6px;">
+          <div class="progress-fill" style="width:${Math.min(sessCount/10*100,100)}%;"></div>
+        </div>
+      </td>
+      <td><span class="badge ${feeColors[s.fee]}">${s.fee}</span></td>
+      <td><button class="btn-sm btn-danger" onclick="deleteStudent(${s.id})">Remove</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addStudent(){
+  const name = document.getElementById('sName').value.trim();
+  const phone = document.getElementById('sPhone').value.trim();
+  const vehicle = document.getElementById('sVehicle').value;
+  const instructor = document.getElementById('sInstructor').value;
+  const fee = document.getElementById('sFee').value;
+  if(!name){ showToast('Please enter student name','error'); return; }
+  students.push({id:nextSId++,name,phone:phone||'—',vehicle,instructor,fee,sessions:0,color:students.length%COLORS.length});
+  document.getElementById('sName').value='';
+  document.getElementById('sPhone').value='';
+  renderStudents();
+  showToast(`${name} added successfully!`);
+}
+
+function deleteStudent(id){
+  const s = getStudent(id);
+  students = students.filter(x=>x.id!==id);
+  sessions = sessions.filter(x=>x.studentId!==id);
+  renderStudents();
+  renderDashboard();
+  showToast(`${s.name} removed`,'warning');
+}
+
+function renderSchedule(){
+  const sel = document.getElementById('schStudent');
+  sel.innerHTML = '<option value="">Select student...</option>';
+  students.forEach(s=> sel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+  let html = `<div class="sched-head">
+    <div class="sched-head-cell" style="text-align:left;padding-left:10px;">Time</div>
+    ${DAYS.map(d=>`<div class="sched-head-cell">${d}</div>`).join('')}
+  </div>`;
+  SLOTS.forEach(slot=>{
+    html += `<div class="sched-row">
+      <div class="sched-time">${slot.replace('–','–').substring(0,slot.indexOf('M')+1)}</div>`;
+    DAYS.forEach((_,di)=>{
+      const dayDate = getWeekDate(di);
+      const sess = sessions.find(s=>s.slot===slot && new Date(s.date).toDateString()===new Date(dayDate).toDateString());
+      const st = sess ? getStudent(sess.studentId) : null;
+      const [bg] = st ? COLORS[st.color%COLORS.length] : [''];
+      html += `<div class="sched-cell" onclick="openSlotModal('${slot}','${dayDate}')">`;
+      if(st){
+        html += `<div class="sched-chip" style="background:${bg}22;color:${bg};">${initials(st.name)} ${st.name.split(' ')[0]}</div>
+          <div style="font-size:10px;color:var(--muted);">${sess.status}</div>`;
+      } else {
+        html += `<div class="sched-add">+ add</div>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('schedGrid').innerHTML = html;
+
+  const tb = document.getElementById('sessionsTable');
+  if(!sessions.length){ tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">📅</div>No sessions booked yet.</div></td></tr>`; return; }
+  tb.innerHTML = [...sessions].reverse().map(s=>{
+    const st = getStudent(s.studentId);
+    if(!st) return '';
+    const [bg] = COLORS[st.color%COLORS.length];
+    return `<tr>
+      <td><div class="cell-name">
+        <div class="avatar" style="background:${bg}20;color:${bg};font-size:11px;">${initials(st.name)}</div>
+        ${st.name}
+      </div></td>
+      <td style="font-size:12px;color:var(--muted);">${s.date}</td>
+      <td><span class="badge ${s.slot.includes('PM')?'badge-evening':'badge-morning'}">${s.slot}</span></td>
+      <td style="font-size:12px;">🚗 ${s.vehicle||st.vehicle}</td>
+      <td><span class="badge badge-${s.status}">${s.status}</span></td>
+      <td style="display:flex;gap:6px;">
+        ${s.status==='scheduled'?`<button class="btn-sm btn-success" onclick="updateSession(${s.id},'completed')">✓ Done</button>
+          <button class="btn-sm btn-danger" onclick="updateSession(${s.id},'cancelled')">✗ Cancel</button>`
+          :`<span style="font-size:12px;color:var(--muted);">—</span>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function getWeekDate(dayIndex){
+  const now = new Date('2026-06-05');
+  const day = now.getDay();
+  const diff = dayIndex+1 - day;
+  const d = new Date(now);
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().split('T')[0];
+}
+
+function addSchedule(){
+  const studentId = parseInt(document.getElementById('schStudent').value);
+  const date = document.getElementById('schDate').value;
+  const slot = document.getElementById('schSlot').value;
+  if(!studentId||!date){ showToast('Please fill all fields','error'); return; }
+  const conflict = sessions.find(s=>s.date===date&&s.slot===slot&&s.status==='scheduled');
+  if(conflict){ showToast('This slot is already booked!','error'); return; }
+  const st = getStudent(studentId);
+  sessions.push({id:nextSessId++,studentId,date,slot,vehicle:st.vehicle,status:'scheduled'});
+  renderSchedule();
+  showToast('Session booked successfully!');
+}
+
+function updateSession(id, status){
+  const s = sessions.find(x=>x.id===id);
+  if(s) s.status=status;
+  renderSchedule();
+  renderDashboard();
+  showToast(status==='completed'?'Session marked as completed!':'Session cancelled','warning');
+}
+
+function openSlotModal(slot, date){
+  const existing = sessions.find(s=>s.slot===slot&&s.date===date);
+  document.getElementById('modalTitle').textContent = `${slot} — ${date}`;
+  if(existing){
+    const st = getStudent(existing.studentId);
+    document.getElementById('modalBody').innerHTML = `
+      <div style="background:var(--surface2);border-radius:10px;padding:12px;font-size:13px;">
+        <div style="margin-bottom:8px;"><strong>${st?st.name:'Unknown'}</strong></div>
+        <div style="color:var(--muted);font-size:12px;">Status: <span class="badge badge-${existing.status}">${existing.status}</span></div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted);">Remove this booking?</div>`;
+    document.getElementById('modalConfirm').textContent = 'Remove Slot';
+    document.getElementById('modalConfirm').onclick = ()=>{ sessions=sessions.filter(s=>!(s.slot===slot&&s.date===date)); closeModal(); renderSchedule(); showToast('Slot cleared','warning'); };
+  } else {
+    const opts = students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    document.getElementById('modalBody').innerHTML = `
+      <div class="form-group" style="margin-bottom:12px;"><label>SELECT STUDENT</label>
+        <select id="modalStudent" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;width:100%;font-family:'DM Sans',sans-serif;">${opts}</select>
+      </div>`;
+    document.getElementById('modalConfirm').textContent = 'Book Slot';
+    document.getElementById('modalConfirm').onclick = ()=>{
+      const sid = parseInt(document.getElementById('modalStudent').value);
+      const st = getStudent(sid);
+      sessions.push({id:nextSessId++,studentId:sid,date,slot,vehicle:st.vehicle,status:'scheduled'});
+      closeModal(); renderSchedule(); showToast('Slot booked!');
+    };
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target===document.getElementById('modal')) closeModal(); });
+
+function renderVehicles(){
+  const usedVehicles = {};
+  sessions.filter(s=>s.status==='scheduled').forEach(s=>{ usedVehicles[s.vehicle]=(usedVehicles[s.vehicle]||0)+1; });
+  
+  document.getElementById('vehicleGrid').innerHTML = VEHICLES.map((v,i)=>{
+    const inUse = usedVehicles[v.name]||0;
+    const available = !inUse;
+    return `<div class="vehicle-card" style="animation-delay:${i*0.08}s">
+      <div class="vehicle-car-icon">
+        <img src="${v.icon}" alt="${v.name}" />
+      </div>
+      <div class="vehicle-name">${v.name}</div>
+      <div class="vehicle-detail">${v.plate} · ${v.fuel} · ${v.year}</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Sessions today: ${inUse}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(inUse*25,100)}%;background:${v.color};"></div></div>
+      </div>
+      <div class="vehicle-status">
+        <span class="status-dot ${available?'pulse':''}" style="background:${available?'#2dd4a0':'#f5a623'};"></span>
+        <span style="font-size:12px;color:${available?'#2dd4a0':'#f5a623'};">${available?'Available':'In Use'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('schDate').value = '2026-06-05';
+document.getElementById('sDate').value = '2026-06-05';
+renderDashboard();
+renderStudents();
+</script>
+</body>
+</html>
